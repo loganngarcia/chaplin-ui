@@ -18,12 +18,12 @@
 
 ## ✨ What is Chaplin-UI?
 
-Chaplin-UI is a visual speech recognition (VSR) application that can transcribe speech just by watching your lips move. This project is based on [Chaplin](https://github.com/amanvirparhar/chaplin) by [Amanvir Parhar](https://amanvir.com), with added web interface and UI improvements. Perfect for:
+Chaplin-UI is a gentle, privacy-focused tool that reads lips and turns them into text. Simply record yourself speaking (or upload a video), and watch as your words appear on screen—all without making a sound. This project is based on [Chaplin](https://github.com/amanvirparhar/chaplin) by [Amanvir Parhar](https://amanvir.com), with added web interface and UI improvements. Perfect for:
 
-- 🎤 **Silent communication** - Type without speaking
+- 🎤 **Silent communication** - Type without speaking, or transcribe existing videos
 - 🔒 **Privacy-first** - Everything runs locally on your machine ([Privacy Policy](./PRIVACY.md))
-- 🌐 **Web-based** - Works in any modern browser
-- 🎨 **Beautiful UI** - Apple HIG-inspired design
+- 🌐 **Web-based** - Works in any modern browser—no installation needed
+- 🎨 **Beautiful UI** - Clean, calming design that adapts to your system theme
 
 ## 🚀 Quick Start
 
@@ -75,7 +75,13 @@ Chaplin-UI is a visual speech recognition (VSR) application that can transcribe 
    ```
    The UI opens in **~1 second** at [http://localhost:8000](http://localhost:8000). The model loads in the background (~30–60 sec first time); you can use the interface right away—buttons enable when ready.
 
-   Use the **LLM Provider** dropdown in the web UI to choose Ollama or LM Studio before processing.
+6. **Start transcribing:**
+   - **Record live**: Click "Start recording" to capture video from your camera
+   - **Upload a video**: Click "Upload video" to transcribe an existing video file
+   - Choose your LLM provider (Ollama or LM Studio) in the settings menu (gear icon)
+   - Your transcription appears in both raw and corrected formats
+
+   That's it! The app handles everything else for you.
 
 ## 📖 Documentation
 
@@ -102,11 +108,15 @@ chaplin-ui/
 
 ### How It Works
 
-1. **Video Capture**: Camera records video frames (or upload existing video)
-2. **Face Detection**: MediaPipe detects and tracks your face
-3. **VSR Inference**: LRS3 model processes lip movements → raw text (ALL CAPS)
-4. **LLM Correction**: Ollama or LM Studio corrects grammar, adds punctuation, formats text
-5. **Display**: Shows both raw and corrected transcription
+Simply put, Chaplin-UI watches how your lips move and turns that into text. Here's what happens behind the scenes:
+
+1. **You provide video** - Either record yourself speaking or upload an existing video file
+2. **Face detection** - The app finds and tracks your face in the video
+3. **Lip reading** - A trained model watches your lip movements and creates initial text
+4. **Text refinement** - An AI language model cleans up the text, adds punctuation, and fixes any mistakes
+5. **You see results** - Both the raw transcription and the polished version appear on screen
+
+You can copy the corrected text with one click, or review the raw output to see what the lip-reading model detected.
 
 ### LLM Providers: Ollama vs LM Studio
 
