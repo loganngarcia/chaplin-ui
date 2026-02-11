@@ -269,6 +269,7 @@ A: That's totally normal! We'll provide feedback and work together to improve it
 - Add real-time streaming transcription (process video chunks as they're recorded)
 - Support for multiple languages (detect language, translate output)
 - Custom model training pipeline (fine-tune VSR model for specific use cases)
+- Integration with additional LLM providers (we currently support Ollama and LM Studio; could add Claude CLI, OpenAI, Anthropic, Google Gemini, etc.)
 - Desktop app (Electron/Tauri wrapper for native feel)
 - Batch processing (process multiple videos at once)
 - Video editing integration (export transcriptions as subtitles)
