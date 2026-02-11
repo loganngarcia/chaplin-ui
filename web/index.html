@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!--
+  Chaplin-UI - Main HTML Page
+  
+  This is the frontend HTML structure for the web application.
+  
+  The layout uses a two-panel design:
+    - Left: Video feed and controls
+    - Right: Transcription results
+  
+  Want to customize?
+    - Add new UI elements: Just add HTML here
+    - Change layout: Modify the .app grid in style.css
+    - Add features: Update app.js for behavior
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chaplin-UI - Visual Speech Recognition</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <!-- Main application container - uses CSS Grid for layout -->
+  <div class="app">
+    <!-- Left Panel: Video and Controls -->
+    <div class="left-panel">
+      <!-- Video container maintains 16:9 aspect ratio -->
+      <div class="video-container">
+        <!-- Video element displays camera feed -->
+        <video id="video" autoplay muted playsinline></video>
+        <!-- Placeholder shown while camera initializes -->
+        <div id="video-placeholder" class="video-placeholder">
+          <p>Initializing camera...</p>
+        </div>
+        <!-- Green dot shown when recording -->
+        <div id="recording-dot" class="recording-dot" hidden></div>
+      </div>
+      <!-- Control buttons -->
+      <div class="button-row">
+        <button id="upload-btn" class="btn btn-secondary">Upload video</button>
+        <button id="record-btn" class="btn btn-primary">Start recording</button>
+      </div>
+      <!-- Hidden file input triggered by upload button -->
+      <input type="file" id="file-input" accept="video/*" hidden>
+    </div>
+    
+    <!-- Right Panel: Results -->
+    <div class="right-panel">
+      <h2>Transcription Results</h2>
+      <!-- Raw VSR output (usually ALL CAPS) -->
+      <div class="section">
+        <label>Raw Output:</label>
+        <textarea id="raw-output" readonly placeholder="Raw VSR output will appear here..."></textarea>
+      </div>
+      <!-- LLM-corrected output (formatted nicely) -->
+      <div class="section">
+        <label>Corrected Output:</label>
+        <textarea id="corrected-output" readonly placeholder="LLM-corrected text will appear here..."></textarea>
+      </div>
+      <!-- Copy button for corrected text -->
+      <button id="copy-btn" class="btn btn-secondary copy-btn">Copy Corrected Text</button>
+      <!-- Status message -->
+      <p id="status" class="status">Ready</p>
+    </div>
+  </div>
+  <!-- Load JavaScript application logic -->
+  <script src="/app.js"></script>
+</body>
+</html>

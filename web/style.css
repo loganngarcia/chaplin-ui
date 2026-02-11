@@ -1,0 +1,265 @@
+/**
+ * Chaplin-UI Stylesheet
+ * 
+ * This stylesheet implements Apple Human Interface Guidelines (HIG) for dark mode.
+ * All colors use CSS variables for easy customization.
+ * 
+ * 🎨 Want to customize the theme?
+ *    - Change colors: Modify the CSS variables below
+ *    - Adjust spacing: Look for padding/margin values
+ *    - Change fonts: Modify font-family in body
+ *    - Responsive design: Check @media queries
+ */
+
+/* ============================================================================
+   CSS Variables (Apple HIG Dark Mode)
+   ============================================================================
+   These are the official Apple system colors. Feel free to customize!
+   Tip: Use browser DevTools to experiment with different values.
+*/
+:root {
+  /* Apple System Colors (Dark Mode) */
+  --system-background: #000000;              /* Pure black background */
+  --secondary-system-background: #1C1C1E;     /* System Gray 6 - panels */
+  --tertiary-system-background: #2C2C2E;     /* System Gray 5 - elevated surfaces */
+  --label: #FFFFFF;                          /* Primary text color (white) */
+  --secondary-label: rgba(235, 235, 245, 0.6); /* Secondary text (60% opacity) */
+  --tertiary-label: rgba(235, 235, 245, 0.3);  /* Tertiary text (30% opacity) */
+  
+  /* Accent Colors */
+  --system-blue: #0A84FF;                    /* Primary actions (Start button) */
+  --system-green: #30D158;                   /* Success states */
+  --system-red: #FF453A;                     /* Destructive actions (Stop button) */
+  --system-orange: #FF9F0A;                  /* Warnings */
+  --system-yellow: #FFD60A;                  /* Processing states */
+  
+  /* UI Constants */
+  --radius: 28px;  /* Border radius for rounded corners */
+  --font-size: 15px;  /* Base font size */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  background: var(--system-background);
+  color: var(--label);
+  min-height: 100vh;
+  font-size: var(--font-size);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+}
+
+.left-panel,
+.right-panel {
+  background: var(--secondary-system-background);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.left-panel {
+  width: 100%;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 16/9; /* Laptop/webcam aspect ratio */
+  background: var(--tertiary-system-background);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tertiary-label);
+  text-align: center;
+  padding: 20px;
+}
+
+.video-placeholder.hidden {
+  display: none;
+}
+
+.recording-dot {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 12px;
+  height: 12px;
+  background: var(--system-green);
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  50% { opacity: 0.5; }
+}
+
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.btn {
+  height: 48px;
+  border-radius: var(--radius);
+  font-size: var(--font-size);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--system-blue);
+  color: var(--label);
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-primary.recording {
+  background: var(--system-red);
+}
+
+.btn-primary.recording:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: var(--tertiary-system-background);
+  color: var(--label);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #3A3A3C;
+}
+
+.copy-btn {
+  align-self: stretch;
+  height: 44px;
+}
+
+.right-panel h2 {
+  margin: 0 0 8px 0;
+  font-size: var(--font-size);
+  font-weight: 600;
+  color: var(--label);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section label {
+  font-weight: 600;
+  font-size: var(--font-size);
+  color: var(--label);
+}
+
+textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--tertiary-system-background);
+  color: var(--label);
+  border: none;
+  outline: none;
+  font-size: var(--font-size);
+  font-family: inherit;
+  resize: vertical;
+  -webkit-font-smoothing: antialiased;
+}
+
+textarea:focus {
+  outline: none;
+}
+
+#corrected-output {
+  min-height: 160px;
+}
+
+textarea::placeholder {
+  color: var(--tertiary-label);
+}
+
+.status {
+  margin: 0;
+  font-size: var(--font-size);
+  color: var(--tertiary-label);
+}
+
+.status.ready { 
+  color: var(--system-green); 
+}
+
+.status.processing { 
+  color: var(--system-yellow); 
+}
+
+.status.error { 
+  color: var(--system-red); 
+}
+
+.status.warning { 
+  color: var(--system-orange); 
+}
