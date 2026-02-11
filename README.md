@@ -42,7 +42,7 @@ I built this after a week of laryngitis—when I couldn't speak, I needed a way 
 ### Prerequisites
 
 - **Python 3.12+** (check with `python3 --version`)
-- **LLM local server** – choose one:
+- **LLM local server** – Ollama or LM Studio (the app finds one you have running):
   - **[Ollama](https://ollama.com)** – `ollama serve` + `ollama pull <model>`
   - **[LM Studio](https://lmstudio.ai/)** – load model, enable Local Server (port 1234)
 - **Modern web browser** with camera access
@@ -68,7 +68,7 @@ I built this after a week of laryngitis—when I couldn't speak, I needed a way 
    ```
    This downloads the VSR model from Hugging Face (~500MB).
 
-4. **Start your LLM server** (pick one):
+4. **Start your LLM server** (pick one: Ollama or LM Studio):
 
    **Option A – Ollama**
    ```bash
@@ -90,8 +90,7 @@ I built this after a week of laryngitis—when I couldn't speak, I needed a way 
 6. **Start transcribing:**
    - **Record live**: Click "Start recording" to capture video from your camera
    - **Upload a video**: Click "Upload video" to transcribe an existing video file
-   - Choose your LLM provider (Ollama or LM Studio) in the settings menu (gear icon)
-   - Your transcription appears in both raw and corrected formats
+   - Your transcription appears in both raw and corrected formats. (You can change the LLM in settings if needed.)
 
    That's it! The app handles everything else for you.
 
