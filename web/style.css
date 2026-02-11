@@ -118,6 +118,7 @@
   justify-content: flex-start;
   padding: 72px 16px 16px 16px;  /* Top padding for icon clearance */
   pointer-events: none;
+  overflow-y: auto;  /* Allow scrolling on small screens */
 }
 
 .settings-panel[hidden] {
@@ -142,10 +143,12 @@
   background: var(--secondary-system-background);
   border-radius: var(--radius);
   padding: 20px;
-  min-width: 320px;
-  max-width: 90vw;
+  min-width: 280px;
+  max-width: min(90vw, 400px);
+  width: 100%;
   box-shadow: 0 8px 32px var(--backdrop-opacity);
   cursor: default;
+  box-sizing: border-box;
 }
 
 .settings-title {
@@ -189,6 +192,19 @@ body {
 @media (max-width: 900px) {
   .app {
     grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .settings-panel {
+    padding: 60px 12px 12px 12px;
+  }
+  
+  .settings-panel-content {
+    padding: 16px;
+    min-width: 0;
   }
 }
 
@@ -324,6 +340,12 @@ body {
   gap: 12px;
 }
 
+@media (max-width: 600px) {
+  .provider-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .input-select,
 .input-text {
   height: 44px;
@@ -335,6 +357,9 @@ body {
   outline: none;
   font-size: var(--font-size);
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;  /* Prevents overflow in grid */
 }
 
 .input-select {
@@ -344,6 +369,7 @@ body {
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
+  transition: opacity 0.2s ease;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -361,6 +387,16 @@ body {
   font-size: 13px;
   color: var(--tertiary-label);
   line-height: 1.4;
+  transition: color 0.2s ease;
+}
+
+.setting-hint-success {
+  color: var(--system-green);
+}
+
+.setting-hint-unavailable {
+  color: var(--tertiary-label);
+  opacity: 0.8;
 }
 
 .right-panel h2 {

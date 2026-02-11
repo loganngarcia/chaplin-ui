@@ -31,6 +31,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
+import httpx
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
@@ -46,7 +47,9 @@ from chaplin_ui.core.constants import (
     DEFAULT_DEVICE,
     LLM_PROVIDER_OLLAMA,
     LLM_PROVIDER_LMSTUDIO,
+    OLLAMA_BASE_URL,
     OLLAMA_DEFAULT_MODEL,
+    LMSTUDIO_BASE_URL,
     LMSTUDIO_DEFAULT_MODEL,
     WEB_APP_HOST,
     WEB_APP_PORT,
@@ -56,6 +59,40 @@ from chaplin_ui.core.logging_config import get_logger, setup_logging
 from pipelines.pipeline import InferencePipeline
 
 logger = get_logger(__name__)
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def format_raw_output(text: str) -> str:
+    """Format raw VSR output from ALL CAPS to sentence case (first letter capitalized).
+    
+    VSR models typically output text in ALL CAPS. This function converts it to
+    a more readable format with only the first letter capitalized.
+    
+    Args:
+        text: Raw VSR output text (typically ALL CAPS).
+        
+    Returns:
+        Text formatted with first letter capitalized, rest lowercase.
+        
+    Example:
+        >>> format_raw_output("HELLO WORLD")
+        "Hello world"
+        >>> format_raw_output("")
+        ""
+    """
+    if not text:
+        return text
+    
+    # Convert to lowercase, then capitalize first letter
+    text_lower = text.lower().strip()
+    if not text_lower:
+        return text
+    
+    # Capitalize first letter only
+    return text_lower[0].upper() + text_lower[1:] if len(text_lower) > 1 else text_lower.upper()
+
 
 # ============================================================================
 # FastAPI Application Setup
@@ -166,6 +203,111 @@ async def serve_js() -> FileResponse:
     return FileResponse(WEB_DIR / "app.js", media_type="application/javascript")
 
 
+@app.post("/api/process-video-vsr")
+async def process_video_vsr(video: UploadFile = File(...)) -> dict:
+    """Process video for VSR inference only (fast - shows raw output immediately).
+    
+    This endpoint runs VSR inference and returns raw output immediately,
+    without waiting for LLM correction. Use this to show results faster.
+    
+    Args:
+        video: Uploaded video file from the browser.
+        
+    Returns:
+        Dictionary with 'raw' VSR output.
+    """
+    if vsr_model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Model still loading... Please wait a moment and try again.",
+        )
+    
+    ext = Path(video.filename or "video.mp4").suffix.lower()
+    if ext not in SUPPORTED_VIDEO_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format: {ext}. Supported formats: {', '.join(SUPPORTED_VIDEO_FORMATS)}"
+        )
+    
+    suffix = ext
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        try:
+            contents = await video.read()
+            tmp.write(contents)
+            tmp_path = tmp.name
+            
+            # Convert WebM to MP4 if needed
+            if ext == ".webm":
+                mp4_path = tmp_path.rsplit(".", 1)[0] + ".mp4"
+                try:
+                    subprocess.run(
+                        ["ffmpeg", "-i", tmp_path, "-c:v", "libx264", "-an", "-y", mp4_path],
+                        capture_output=True,
+                        check=True,
+                        timeout=60,
+                    )
+                    os.remove(tmp_path)
+                    tmp_path = mp4_path
+                except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+                    pass
+            
+            # Run VSR inference (fast - returns immediately)
+            output = vsr_model(tmp_path)
+            logger.debug(f"📝 Raw VSR output: {output}")
+            
+            # Format raw output: ALL CAPS -> sentence case (first letter capitalized)
+            formatted_output = format_raw_output(output)
+            
+            return {"raw": formatted_output}
+            
+        finally:
+            for path in [tmp_path, tmp.name]:
+                if path != tmp.name and os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
+
+
+@app.post("/api/correct-text")
+async def correct_text(
+    raw_text: str = Form(...),
+    provider: Optional[str] = Form(None),
+    model: Optional[str] = Form(None),
+) -> dict:
+    """Correct raw VSR text using LLM.
+    
+    Takes raw text from VSR and returns corrected version.
+    This is called separately after VSR completes for faster feedback.
+    
+    Args:
+        raw_text: Raw VSR output text.
+        provider: Optional LLM provider.
+        model: Optional model name.
+        
+    Returns:
+        Dictionary with 'corrected' text.
+    """
+    if llm_client is None:
+        raise HTTPException(
+            status_code=503,
+            detail="LLM client not initialized.",
+        )
+    
+    try:
+        if provider and provider in (LLM_PROVIDER_OLLAMA, LLM_PROVIDER_LMSTUDIO):
+            request_client = create_llm_client(provider=provider, model=model)
+            corrected = await request_client.correct_text_simple(raw_text)
+        else:
+            corrected = await llm_client.correct_text_simple(raw_text)
+        logger.debug(f"✨ Corrected output: {corrected}")
+        return {"corrected": corrected}
+    except Exception as e:
+        logger.warning(f"LLM correction failed: {e}")
+        # Return raw text if correction fails
+        return {"corrected": raw_text}
+
+
 @app.post("/api/process-video")
 async def process_video(
     video: UploadFile = File(...),
@@ -266,26 +408,35 @@ async def process_video(
                     logger.warning(f"⚠️ WebM conversion failed, using original: {e}")
                     logger.info("💡 Install ffmpeg for better WebM support: brew install ffmpeg")
             
-            # Step 1: Run VSR inference
+            # Step 1: Run VSR inference (this is fast - shows immediately)
             # This is where the magic happens - the model reads lips and outputs text
             logger.info(f"🎬 Processing video: {tmp_path}")
             output = vsr_model(tmp_path)
             # Privacy: Use debug level for transcription text to avoid logging sensitive data
             logger.debug(f"📝 Raw VSR output: {output}")
             
-            # Step 2: LLM correction
+            # Format raw output: ALL CAPS -> sentence case (first letter capitalized)
+            formatted_output = format_raw_output(output)
+            
+            # Step 2: LLM correction (this can be slower - happens after raw is shown)
             # The raw output is usually ALL CAPS with no punctuation
             # The LLM fixes grammar, adds punctuation, and formats it nicely
-            # Use per-request provider/model if provided, else default client
-            if provider and provider in (LLM_PROVIDER_OLLAMA, LLM_PROVIDER_LMSTUDIO):
-                request_client = create_llm_client(provider=provider, model=model)
-                corrected = await request_client.correct_text_simple(output)
-            else:
-                corrected = await llm_client.correct_text_simple(output)
-            # Privacy: Use debug level for transcription text to avoid logging sensitive data
-            logger.debug(f"✨ Corrected output: {corrected}")
+            corrected = None
+            try:
+                # Use per-request provider/model if provided, else default client
+                # Pass original output (before formatting) to LLM for better correction
+                if provider and provider in (LLM_PROVIDER_OLLAMA, LLM_PROVIDER_LMSTUDIO):
+                    request_client = create_llm_client(provider=provider, model=model)
+                    corrected = await request_client.correct_text_simple(output)
+                else:
+                    corrected = await llm_client.correct_text_simple(output)
+                # Privacy: Use debug level for transcription text to avoid logging sensitive data
+                logger.debug(f"✨ Corrected output: {corrected}")
+            except Exception as e:
+                logger.warning(f"LLM correction failed, returning raw output only: {e}")
+                # If LLM fails, we still return raw output so user sees something
             
-            return {"raw": output, "corrected": corrected}
+            return {"raw": formatted_output, "corrected": corrected or formatted_output}
             
         finally:
             # Always clean up temporary files, even if something went wrong
@@ -313,18 +464,97 @@ async def health() -> dict:
     }
 
 
+async def _check_provider_available(base_url: str, timeout: float = 1.0) -> bool:
+    """Check if an LLM provider is available at the given URL.
+    
+    Args:
+        base_url: Base URL to check.
+        timeout: Request timeout in seconds.
+        
+    Returns:
+        True if provider responds, False otherwise.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            # Try to list models - this works for both Ollama and LM Studio
+            response = await client.get(f"{base_url}/models")
+            return response.status_code == 200
+    except Exception:
+        return False
+
+
+async def _get_available_models(base_url: str, timeout: float = 2.0) -> list[str]:
+    """Get list of available models from a provider.
+    
+    Args:
+        base_url: Base URL of the provider.
+        timeout: Request timeout in seconds.
+        
+    Returns:
+        List of model names, or empty list if unavailable.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.get(f"{base_url}/models")
+            if response.status_code == 200:
+                data = response.json()
+                # Ollama returns {"models": [{"name": "..."}, ...]}
+                if "models" in data and isinstance(data["models"], list):
+                    if data["models"] and "name" in data["models"][0]:
+                        return [m["name"] for m in data["models"]]
+                    # LM Studio returns {"data": [{"id": "..."}, ...]}
+                if "data" in data and isinstance(data["data"], list):
+                    return [m.get("id", m.get("name", "")) for m in data["data"] if m.get("id") or m.get("name")]
+    except Exception:
+        pass
+    return []
+
+
 @app.get("/api/llm-config")
 async def get_llm_config() -> dict:
-    """Get available LLM providers and their default models.
+    """Get available LLM providers and auto-detect which ones are running.
+    
+    Automatically checks which providers are available and lists their models.
     
     Returns:
-        Dictionary with provider options for the UI.
+        Dictionary with provider options, availability status, and available models.
     """
+    # Check both providers in parallel
+    ollama_available = await _check_provider_available(OLLAMA_BASE_URL)
+    lmstudio_available = await _check_provider_available(LMSTUDIO_BASE_URL)
+    
+    # Get available models for each provider
+    ollama_models = await _get_available_models(OLLAMA_BASE_URL) if ollama_available else []
+    lmstudio_models = await _get_available_models(LMSTUDIO_BASE_URL) if lmstudio_available else []
+    
+    # Determine auto-selected provider (prefer the one that's available)
+    auto_provider = None
+    if ollama_available and not lmstudio_available:
+        auto_provider = LLM_PROVIDER_OLLAMA
+    elif lmstudio_available and not ollama_available:
+        auto_provider = LLM_PROVIDER_LMSTUDIO
+    elif ollama_available and lmstudio_available:
+        # Both available - prefer LM Studio for backward compatibility
+        auto_provider = LLM_PROVIDER_LMSTUDIO
+    
     return {
         "providers": [
-            {"id": LLM_PROVIDER_OLLAMA, "name": "Ollama", "default_model": OLLAMA_DEFAULT_MODEL},
-            {"id": LLM_PROVIDER_LMSTUDIO, "name": "LM Studio", "default_model": LMSTUDIO_DEFAULT_MODEL},
+            {
+                "id": LLM_PROVIDER_OLLAMA,
+                "name": "Ollama",
+                "default_model": OLLAMA_DEFAULT_MODEL,
+                "available": ollama_available,
+                "models": ollama_models[:10],  # Limit to first 10 models
+            },
+            {
+                "id": LLM_PROVIDER_LMSTUDIO,
+                "name": "LM Studio",
+                "default_model": LMSTUDIO_DEFAULT_MODEL,
+                "available": lmstudio_available,
+                "models": lmstudio_models[:10],  # Limit to first 10 models
+            },
         ],
+        "auto_provider": auto_provider,  # Which provider to auto-select
     }
 
 

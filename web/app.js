@@ -105,19 +105,169 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ========================================================================
-  // LLM Provider Settings
+  // LLM Provider Settings & Auto-Detection
   // ========================================================================
   const PROVIDER_HINTS = {
-    lmstudio: 'LM Studio: load model, enable Local Server (port 1234)',
-    ollama: 'Ollama: run `ollama serve`, then `ollama pull <model>`',
+    lmstudio: 'Open LM Studio, load a model, and enable Local Server (port 1234)',
+    ollama: 'Run `ollama serve`, then `ollama pull <model>` to download a model',
   };
 
-  function updateProviderHint() {
-    const provider = providerSelect?.value || 'lmstudio';
-    if (providerHint) providerHint.textContent = PROVIDER_HINTS[provider] || '';
+  let llmConfig = null;
+
+  // Remember last provider/model selection
+  function saveProviderPreference(provider, model) {
+    try {
+      localStorage.setItem('chaplin_provider', provider || '');
+      localStorage.setItem('chaplin_model', model || '');
+    } catch (e) {
+      // localStorage might not be available
+    }
   }
 
-  providerSelect?.addEventListener('change', updateProviderHint);
+  function loadProviderPreference() {
+    try {
+      return {
+        provider: localStorage.getItem('chaplin_provider') || null,
+        model: localStorage.getItem('chaplin_model') || null,
+      };
+    } catch (e) {
+      return { provider: null, model: null };
+    }
+  }
+
+  async function loadLLMConfig() {
+    try {
+      const res = await fetch('/api/llm-config');
+      llmConfig = await res.json();
+      
+      const saved = loadProviderPreference();
+      
+      // Auto-select provider: saved preference > auto-detected > first available
+      let selectedProvider = null;
+      if (saved.provider && llmConfig.providers?.find(p => p.id === saved.provider && p.available)) {
+        selectedProvider = saved.provider;
+      } else if (llmConfig.auto_provider) {
+        selectedProvider = llmConfig.auto_provider;
+      } else {
+        // Use first available provider
+        const available = llmConfig.providers?.find(p => p.available);
+        if (available) selectedProvider = available.id;
+      }
+      
+      if (selectedProvider && providerSelect) {
+        providerSelect.value = selectedProvider;
+        // Auto-select model if only one available and no saved preference
+        const providerInfo = llmConfig.providers?.find(p => p.id === selectedProvider);
+        if (providerInfo && providerInfo.models?.length === 1 && !saved.model && modelInput) {
+          modelInput.value = providerInfo.models[0];
+        } else if (saved.model && modelInput) {
+          modelInput.value = saved.model;
+        }
+        updateProviderSettings();
+      }
+      
+      // Keep all options selectable so users can see instructions
+      // Don't disable unavailable options - users need to see setup instructions
+      if (providerSelect && llmConfig.providers) {
+        llmConfig.providers.forEach(provider => {
+          const option = providerSelect.querySelector(`option[value="${provider.id}"]`);
+          if (option) {
+            option.textContent = provider.name;  // Keep it clean
+            option.disabled = false;  // Always allow selection
+          }
+        });
+      }
+      
+      updateProviderHint();
+    } catch (err) {
+      console.error('Failed to load LLM config:', err);
+    }
+  }
+
+  function updateProviderSettings() {
+    if (!llmConfig || !providerSelect) return;
+    
+    const provider = providerSelect.value;
+    const providerInfo = llmConfig.providers?.find(p => p.id === provider);
+    
+    // Save preference when changed
+    saveProviderPreference(provider, modelInput?.value || null);
+    
+    if (providerInfo && providerInfo.models && providerInfo.models.length > 0) {
+      // Populate model input with available models as suggestions
+      if (modelInput) {
+        // Auto-select model if only one available and field is empty
+        if (providerInfo.models.length === 1 && !modelInput.value) {
+          modelInput.value = providerInfo.models[0];
+          saveProviderPreference(provider, providerInfo.models[0]);
+        }
+        
+        modelInput.placeholder = `Model name (optional)`;
+        modelInput.setAttribute('list', `models-${provider}`);
+        
+        // Create datalist for autocomplete
+        let datalist = document.getElementById(`models-${provider}`);
+        if (!datalist) {
+          datalist = document.createElement('datalist');
+          datalist.id = `models-${provider}`;
+          document.body.appendChild(datalist);
+        }
+        datalist.innerHTML = providerInfo.models.map(m => `<option value="${m}">`).join('');
+        modelInput.setAttribute('list', `models-${provider}`);
+      }
+    } else if (modelInput) {
+      modelInput.placeholder = 'Model name (optional)';
+      modelInput.removeAttribute('list');
+    }
+    
+    updateProviderHint();
+  }
+  
+  // Save model preference when user types
+  modelInput?.addEventListener('input', () => {
+    if (providerSelect?.value) {
+      saveProviderPreference(providerSelect.value, modelInput.value || null);
+    }
+  });
+
+  function updateProviderHint() {
+    if (!providerSelect || !providerHint) return;
+    const provider = providerSelect.value || 'lmstudio';
+    const providerInfo = llmConfig?.providers?.find(p => p.id === provider);
+    
+    if (!providerInfo) {
+      providerHint.textContent = PROVIDER_HINTS[provider] || '';
+      providerHint.className = 'setting-hint';
+      return;
+    }
+    
+    if (providerInfo.available) {
+      // Clean, subtle success message
+      const modelCount = providerInfo.models?.length || 0;
+      if (modelCount > 0) {
+        providerHint.textContent = `Ready to use. ${modelCount} model${modelCount > 1 ? 's' : ''} available.`;
+      } else {
+        providerHint.textContent = 'Ready to use.';
+      }
+      providerHint.className = 'setting-hint setting-hint-success';
+    } else {
+      // Show setup instructions when provider isn't available
+      providerHint.textContent = PROVIDER_HINTS[provider] || '';
+      providerHint.className = 'setting-hint setting-hint-unavailable';
+    }
+  }
+
+  providerSelect?.addEventListener('change', updateProviderSettings);
+  
+  // Periodically refresh provider status (every 10 seconds)
+  setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      loadLLMConfig();
+    }
+  }, 10000);
+  
+  // Load config on startup
+  loadLLMConfig();
 
   // Settings panel open/close
   function openSettings() {
@@ -269,47 +419,94 @@ document.addEventListener('DOMContentLoaded', () => {
    * 
    * @param {File} file - Video file to process (from upload or recording)
    */
-  async function processVideoFile(file) {
-    setStatus('Processing...', 'processing');
+  async function processVideoFile(file, retryProvider = null) {
+    setStatus('Processing video...', 'processing');
     rawOutput.value = '';
     correctedOutput.value = '';
 
-    // Create form data for file upload
-    // FastAPI expects multipart/form-data with 'video' and optional provider/model
-    const formData = new FormData();
-    formData.append('video', file);
-    const provider = providerSelect?.value || 'lmstudio';
+    // Auto-select provider if none selected but one is available
+    let provider = providerSelect?.value || retryProvider;
+    if (!provider && llmConfig) {
+      const available = llmConfig.providers?.find(p => p.available);
+      if (available) {
+        provider = available.id;
+        if (providerSelect) {
+          providerSelect.value = provider;
+          updateProviderSettings();
+        }
+      }
+    }
+    
+    // Fallback to auto-detected provider if selected one isn't available
+    if (provider && llmConfig) {
+      const providerInfo = llmConfig.providers?.find(p => p.id === provider);
+      if (providerInfo && !providerInfo.available) {
+        // Try the other provider
+        const otherProvider = llmConfig.providers?.find(p => p.id !== provider && p.available);
+        if (otherProvider) {
+          provider = otherProvider.id;
+          if (providerSelect) {
+            providerSelect.value = provider;
+            updateProviderSettings();
+          }
+        }
+      }
+    }
+    
+    provider = provider || 'lmstudio';  // Final fallback
     const model = modelInput?.value?.trim() || null;
-    if (provider) formData.append('provider', provider);
-    if (model) formData.append('model', model);
 
     try {
-      // Send video to backend for processing
-      // The backend will:
-      // 1. Save the video temporarily
-      // 2. Run VSR inference (lip reading)
-      // 3. Use LLM to correct the text
-      // 4. Return both raw and corrected versions
-      const res = await fetch('/api/process-video', {
+      // Step 1: Run VSR inference (fast - shows raw output immediately)
+      const vsrFormData = new FormData();
+      vsrFormData.append('video', file);
+      
+      const vsrRes = await fetch('/api/process-video-vsr', {
         method: 'POST',
-        body: formData,
+        body: vsrFormData,
       });
 
-      // Check if request was successful
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        const msg = typeof err.detail === 'string' ? err.detail : (err.detail?.msg || err.detail || res.statusText || 'Request failed');
+      if (!vsrRes.ok) {
+        const err = await vsrRes.json().catch(() => ({}));
+        const msg = typeof err.detail === 'string' ? err.detail : (err.detail?.msg || err.detail || vsrRes.statusText || 'Request failed');
         throw new Error(msg);
       }
 
-      // Parse response and update UI
-      const data = await res.json();
-      rawOutput.value = data.raw || '';
-      correctedOutput.value = data.corrected || '';
+      // Show raw output immediately
+      const vsrData = await vsrRes.json();
+      rawOutput.value = vsrData.raw || '';
+      setStatus('Correcting text...', 'processing');
+
+      // Step 2: Correct text with LLM (happens after raw is shown)
+      const correctFormData = new FormData();
+      correctFormData.append('raw_text', vsrData.raw || '');
+      if (provider) correctFormData.append('provider', provider);
+      if (model) correctFormData.append('model', model);
+
+      const correctRes = await fetch('/api/correct-text', {
+        method: 'POST',
+        body: correctFormData,
+      });
+
+      if (!correctRes.ok) {
+        // If correction fails, show raw output and continue
+        const err = await correctRes.json().catch(() => ({}));
+        console.warn('LLM correction failed, showing raw output only');
+        correctedOutput.value = vsrData.raw || '';
+        setStatus('Ready (correction unavailable)', 'ready');
+        return;
+      }
+
+      // Show corrected output
+      const correctData = await correctRes.json();
+      correctedOutput.value = correctData.corrected || vsrData.raw || '';
       setStatus('Ready', 'ready');
+      
     } catch (err) {
-      // Show error to user
-      setStatus('Error: ' + err.message, 'error');
+      // Show error to user (clean, Apple-like messaging)
+      const errorMsg = err.message || 'Something went wrong';
+      const cleanMsg = errorMsg.replace(/^Error:\s*/i, '').replace(/^error:\s*/i, '');
+      setStatus(cleanMsg, 'error');
       console.error('Processing error:', err);
     }
   }
@@ -339,14 +536,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Application
   // ========================================================================
   
-  // Set initial provider hint
-  updateProviderHint();
-
   // Start camera when page loads
   startCamera();
 
   // Poll until model is ready (server loads it in background)
   pollUntilReady();
+  
+  // LLM config loads automatically (loadLLMConfig called above)
 
   // Clean up camera stream when page unloads
   // This prevents camera from staying on after user leaves
