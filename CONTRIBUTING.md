@@ -255,22 +255,23 @@ A: That's totally normal! We'll provide feedback and work together to improve it
 
 ### Good First Issues
 
-- Add keyboard shortcuts
-- Improve error messages
-- Add more video format support
-- Improve mobile responsiveness
-- Add dark/light mode toggle
-- Performance optimizations
-- Add unit tests
-- Improve documentation
+- Add keyboard shortcuts (e.g., Space to record, Ctrl/Cmd+C to copy)
+- Enhance error messages (more specific, actionable feedback)
+- Export transcriptions (save to file, download as text/JSON)
+- Transcription history (save previous transcriptions)
+- Performance optimizations (faster model loading, caching)
+- Add unit tests (test core functions, API endpoints)
+- Improve documentation (add examples, tutorials, API docs)
+- Accessibility improvements (ARIA labels, keyboard navigation)
 
 ### Advanced Contributions
 
-- Add real-time streaming transcription
-- Support for multiple languages
-- Custom model training pipeline
-- Integration with other LLM providers
-- Desktop app (Electron/Tauri)
+- Add real-time streaming transcription (process video chunks as they're recorded)
+- Support for multiple languages (detect language, translate output)
+- Custom model training pipeline (fine-tune VSR model for specific use cases)
+- Desktop app (Electron/Tauri wrapper for native feel)
+- Batch processing (process multiple videos at once)
+- Video editing integration (export transcriptions as subtitles)
 
 ## 🎉 Recognition
 
