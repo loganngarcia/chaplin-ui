@@ -1,7 +1,8 @@
 /**
  * Chaplin-UI Stylesheet
  * 
- * This stylesheet implements Apple Human Interface Guidelines (HIG) for dark mode.
+ * This stylesheet implements Apple Human Interface Guidelines (HIG) for both
+ * light and dark modes. Automatically adapts to system preference.
  * All colors use CSS variables for easy customization.
  * 
  * 🎨 Want to customize the theme?
@@ -12,30 +13,64 @@
  */
 
 /* ============================================================================
-   CSS Variables (Apple HIG Dark Mode)
+   CSS Variables (Apple HIG - Light Mode Default)
    ============================================================================
-   These are the official Apple system colors. Feel free to customize!
-   Tip: Use browser DevTools to experiment with different values.
+   These are the official Apple system colors for light mode.
+   Dark mode overrides are defined below using prefers-color-scheme.
 */
 :root {
-  /* Apple System Colors (Dark Mode) */
-  --system-background: #000000;              /* Pure black background */
-  --secondary-system-background: #1C1C1E;     /* System Gray 6 - panels */
-  --tertiary-system-background: #2C2C2E;     /* System Gray 5 - elevated surfaces */
-  --label: #FFFFFF;                          /* Primary text color (white) */
-  --secondary-label: rgba(235, 235, 245, 0.6); /* Secondary text (60% opacity) */
-  --tertiary-label: rgba(235, 235, 245, 0.3);  /* Tertiary text (30% opacity) */
+  /* Apple System Colors (Light Mode) */
+  --system-background: #FFFFFF;              /* Pure white background */
+  --secondary-system-background: #F2F2F7;     /* System Gray 6 - panels */
+  --tertiary-system-background: #E5E5EA;     /* System Gray 5 - elevated surfaces */
+  --label: #000000;                          /* Primary text color (black) */
+  --secondary-label: rgba(60, 60, 67, 0.6);  /* Secondary text (60% opacity) */
+  --tertiary-label: rgba(60, 60, 67, 0.3);   /* Tertiary text (30% opacity) */
   
-  /* Accent Colors */
-  --system-blue: #0A84FF;                    /* Primary actions (Start button) */
-  --system-green: #30D158;                   /* Success states */
-  --system-red: #FF453A;                     /* Destructive actions (Stop button) */
-  --system-orange: #FF9F0A;                  /* Warnings */
-  --system-yellow: #FFD60A;                  /* Processing states */
+  /* Accent Colors (same in both modes) */
+  --system-blue: #007AFF;                    /* Primary actions (Start button) */
+  --system-green: #34C759;                   /* Success states */
+  --system-red: #FF3B30;                     /* Destructive actions (Stop button) */
+  --system-orange: #FF9500;                  /* Warnings */
+  --system-yellow: #FFCC00;                  /* Processing states */
   
   /* UI Constants */
   --radius: 28px;  /* Border radius for rounded corners */
   --font-size: 15px;  /* Base font size */
+  
+  /* Component-specific (light mode) */
+  --backdrop-opacity: rgba(0, 0, 0, 0.4);   /* Backdrop overlay */
+  --dropdown-arrow: #000000;                 /* Dropdown arrow color */
+  --btn-secondary-hover: #E5E5EA;           /* Secondary button hover */
+}
+
+/* ============================================================================
+   Dark Mode Override (Apple HIG Dark Mode)
+   ============================================================================
+   Automatically applied when system preference is dark mode.
+*/
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Apple System Colors (Dark Mode) */
+    --system-background: #000000;              /* Pure black background */
+    --secondary-system-background: #1C1C1E;     /* System Gray 6 - panels */
+    --tertiary-system-background: #2C2C2E;     /* System Gray 5 - elevated surfaces */
+    --label: #FFFFFF;                          /* Primary text color (white) */
+    --secondary-label: rgba(235, 235, 245, 0.6); /* Secondary text (60% opacity) */
+    --tertiary-label: rgba(235, 235, 245, 0.3);  /* Tertiary text (30% opacity) */
+    
+    /* Accent Colors (same in both modes) */
+    --system-blue: #0A84FF;                    /* Primary actions (Start button) */
+    --system-green: #30D158;                   /* Success states */
+    --system-red: #FF453A;                     /* Destructive actions (Stop button) */
+    --system-orange: #FF9F0A;                  /* Warnings */
+    --system-yellow: #FFD60A;                  /* Processing states */
+    
+    /* Component-specific (dark mode) */
+    --backdrop-opacity: rgba(0, 0, 0, 0.5);   /* Backdrop overlay */
+    --dropdown-arrow: #FFFFFF;                 /* Dropdown arrow color */
+    --btn-secondary-hover: #3A3A3C;           /* Secondary button hover */
+  }
 }
 
 * {
@@ -96,7 +131,7 @@
 .settings-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--backdrop-opacity);
   z-index: 199;
   cursor: pointer;
 }
@@ -109,7 +144,7 @@
   padding: 20px;
   min-width: 320px;
   max-width: 90vw;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px var(--backdrop-opacity);
   cursor: default;
 }
 
@@ -254,7 +289,7 @@ body {
 
 .btn-primary {
   background: var(--system-blue);
-  color: var(--label);
+  color: #FFFFFF;  /* Always white for accessibility/contrast on blue background */
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -275,7 +310,7 @@ body {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #3A3A3C;
+  background: var(--btn-secondary-hover);
 }
 
 .copy-btn {
@@ -305,10 +340,16 @@ body {
 .input-select {
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23000000' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
   padding-right: 36px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .input-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  }
 }
 
 .input-text::placeholder {
