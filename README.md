@@ -18,12 +18,24 @@
 
 ## ✨ What is Chaplin-UI?
 
-Chaplin-UI is a gentle, privacy-focused tool that reads lips and turns them into text. Simply record yourself speaking (or upload a video), and watch as your words appear on screen—all without making a sound. This project is based on [Chaplin](https://github.com/amanvirparhar/chaplin) by [Amanvir Parhar](https://amanvir.com), with added web interface and UI improvements. Perfect for:
+Chaplin-UI is a gentle, privacy-focused tool that reads lips and turns them into text. Simply record yourself speaking (or upload a video), and watch as your words appear on screen—all without making a sound. This project is based on [Chaplin](https://github.com/amanvirparhar/chaplin) by [Amanvir Parhar](https://amanvir.com), with added web interface and UI improvements. The VSR model achieves **19.1% word error rate (WER)** on LRS3. Perfect for:
 
 - 🎤 **Silent communication** - Type without speaking, or transcribe existing videos
 - 🔒 **Privacy-first** - Everything runs locally on your machine ([Privacy Policy](./PRIVACY.md))
 - 🌐 **Web-based** - Works in any modern browser—no installation needed
 - 🎨 **Beautiful UI** - Clean, calming design that adapts to your system theme
+
+## 💙 Who It's For
+
+I built this after a week of laryngitis—when I couldn't speak, I needed a way to communicate. If you've ever wanted to say something without making a sound, Chaplin-UI might help:
+
+- **Public places** — Libraries, offices, late-night calls, or anywhere you want to stay quiet
+- **Deaf and hard-of-hearing** — Mouth words to communicate when sign language isn't shared
+- **Medical conditions** — ALS, aphonia, cerebral palsy, laryngectomy, Parkinson's, vocal cord paralysis, selective mutism 
+- **Temporary voice loss** — Laryngitis, recovery from throat surgery, or vocal strain
+- **Privacy** — Situations where you'd rather not speak aloud but still need to get your words out
+
+*Apple just acquired a silent-speech company ([Q.ai](https://www.theverge.com/news/870353/apple-q-ai-acquisition-silent-speech)) for $2 billion—this space matters, and open-source tools like this keep the technology accessible.*
 
 ## 🚀 Quick Start
 
@@ -204,7 +216,7 @@ Chaplin-UI is based on [Chaplin](https://github.com/amanvirparhar/chaplin) by **
 
 ### Additional Credits
 
-- **VSR Model**: Based on [Auto-AVSR](https://github.com/mpc001/auto_avsr) by mpc001
+- **VSR Model**: Based on [Auto-AVSR](https://github.com/mpc001/auto_avsr) by mpc001 (19.1% WER on LRS3)
 - **Dataset**: [Lip Reading Sentences 3](https://mmai.io/datasets/lip_reading/)
 - **LLM**: Uses Ollama or LM Studio for local text correction (both OpenAI-compatible)
 
