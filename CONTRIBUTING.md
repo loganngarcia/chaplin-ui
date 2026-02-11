@@ -275,14 +275,17 @@ A: That's totally normal! We'll provide feedback and work together to improve it
 
 ## 🎉 Recognition
 
-Contributors will be:
-- Listed in our README (if you want)
-- Credited in release notes
-- Appreciated by the community! 🙏
+We believe in giving credit where credit is due! Contributors will be:
+- **Listed in our README** (with your permission)
+- **Credited in release notes** for significant contributions
+- **Mentioned in commit messages** and PR descriptions
+- **Appreciated by the community!** 🙏
+
+All contributors are valued, whether you're fixing a typo, adding a feature, or improving documentation. Your work makes this project better for everyone!
 
 ## 📞 Getting Help
 
-- **Questions?** Open a [discussion](https://github.com/yourusername/chaplin-ui/discussions)
+- **Questions?** Open a [discussion](https://github.com/loganngarcia/chaplin-ui/discussions)
 - **Stuck?** Check existing issues or ask in discussions
 - **Found a bug?** Open an issue
 

@@ -17,7 +17,7 @@
 
 ## ✨ What is Chaplin-UI?
 
-Chaplin-UI is a visual speech recognition (VSR) application that can transcribe speech just by watching your lips move. Perfect for:
+Chaplin-UI is a visual speech recognition (VSR) application that can transcribe speech just by watching your lips move. This project is based on [Chaplin](https://github.com/amanvirparhar/chaplin) by [Amanvir Parhar](https://amanvir.com), with added web interface and UI improvements. Perfect for:
 
 - 🎤 **Silent communication** - Type without speaking
 - 🔒 **Privacy-first** - Everything runs locally on your machine ([Privacy Policy](./PRIVACY.md))
@@ -36,7 +36,7 @@ Chaplin-UI is a visual speech recognition (VSR) application that can transcribe 
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/chaplin-ui.git
+   git clone https://github.com/loganngarcia/chaplin-ui.git
    cd chaplin-ui
    ```
 
@@ -152,7 +152,7 @@ See our [Contributing Guide](./CONTRIBUTING.md) for details on:
 - How to submit pull requests
 - Where to ask questions
 
-**First time contributing?** Check out our [good first issues](https://github.com/yourusername/chaplin-ui/labels/good%20first%20issue)!
+**First time contributing?** Check out our [good first issues](https://github.com/loganngarcia/chaplin-ui/labels/good%20first%20issue)!
 
 ## 📝 License
 
@@ -160,14 +160,20 @@ This project is licensed under the MIT License - see [LICENSE.md](./LICENSE.md) 
 
 ## 🙏 Acknowledgments
 
+### Original Creator
+
+Chaplin-UI is based on [Chaplin](https://github.com/amanvirparhar/chaplin) by **[Amanvir Parhar](https://amanvir.com)**. We're grateful for the original work that made this project possible!
+
+### Additional Credits
+
 - **VSR Model**: Based on [Auto-AVSR](https://github.com/mpc001/auto_avsr) by mpc001
 - **Dataset**: [Lip Reading Sentences 3](https://mmai.io/datasets/lip_reading/)
 - **LLM**: Uses LM Studio for local text correction
 
 ## 💬 Community
 
-- 🐛 **Found a bug?** [Open an issue](https://github.com/yourusername/chaplin-ui/issues)
-- 💡 **Have an idea?** [Start a discussion](https://github.com/yourusername/chaplin-ui/discussions)
+- 🐛 **Found a bug?** [Open an issue](https://github.com/loganngarcia/chaplin-ui/issues)
+- 💡 **Have an idea?** [Start a discussion](https://github.com/loganngarcia/chaplin-ui/discussions)
 - 📧 **Questions?** Check our [FAQ](./CONTRIBUTING.md#faq) or open a discussion
 
 ---
@@ -176,6 +182,6 @@ This project is licensed under the MIT License - see [LICENSE.md](./LICENSE.md) 
 
 **Made with ❤️ by the open source community**
 
-[⭐ Star us on GitHub](https://github.com/yourusername/chaplin-ui) • [📖 Read the docs](#-documentation) • [🤝 Contribute](./CONTRIBUTING.md)
+[⭐ Star us on GitHub](https://github.com/loganngarcia/chaplin-ui) • [📖 Read the docs](#-documentation) • [🤝 Contribute](./CONTRIBUTING.md)
 
 </div>
