@@ -1,4 +1,5 @@
 # Chaplin-UI 🎬
+![chaplin-ui](https://github.com/user-attachments/assets/529823f7-8766-41ed-87d9-c18b178dc1e0)
 
 <div align="center">
 
