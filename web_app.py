@@ -21,15 +21,17 @@ Want to extend this? Check out:
     - Add auth: Add middleware before routes
 """
 
+import asyncio
 import logging
 import os
 import subprocess
 import sys
 import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 
@@ -42,8 +44,10 @@ from chaplin_ui.core.constants import (
     DEFAULT_CONFIG_PATH,
     DEFAULT_DETECTOR,
     DEFAULT_DEVICE,
-    LLM_DEFAULT_BASE_URL,
-    LLM_DEFAULT_MODEL,
+    LLM_PROVIDER_OLLAMA,
+    LLM_PROVIDER_LMSTUDIO,
+    OLLAMA_DEFAULT_MODEL,
+    LMSTUDIO_DEFAULT_MODEL,
     WEB_APP_HOST,
     WEB_APP_PORT,
     WEB_DIR_NAME,
@@ -57,12 +61,58 @@ logger = get_logger(__name__)
 # FastAPI Application Setup
 # ============================================================================
 
+# ============================================================================
+# Lifespan: Start Server Immediately, Load Model in Background
+# ============================================================================
+# The VSR model is ~500MB and takes 20-60 seconds to load. Instead of blocking
+# startup, we load it in a background task so the UI opens in ~1 second.
+
+
+def _load_vsr_model() -> Optional[InferencePipeline]:
+    """Load VSR model (blocking - runs in thread pool)."""
+    try:
+        return InferencePipeline(
+            config_filename=CONFIG_PATH,
+            detector=DETECTOR,
+            face_track=True,
+            device=DEVICE,
+        )
+    except Exception as e:
+        logger.error(f"❌ Failed to load VSR model: {e}")
+        logger.error("Make sure you ran ./setup.sh to download model files")
+        return None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start server immediately; load model in background."""
+    global vsr_model, llm_client
+
+    setup_logging()
+    logger.info("🚀 Server starting - UI available immediately at http://localhost:8000")
+
+    async def load_models_background() -> None:
+        global vsr_model, llm_client
+        logger.info("Loading VSR model in background (~30–60 sec)...")
+        loop = asyncio.get_event_loop()
+        vsr_model = await loop.run_in_executor(None, _load_vsr_model)
+        if vsr_model:
+            logger.info("✅ VSR model loaded successfully!")
+        llm_client = create_llm_client(provider=LLM_PROVIDER_LMSTUDIO)
+        logger.info("✅ LLM client initialized")
+        logger.info("💡 Start Ollama or LM Studio with a model loaded before processing!")
+
+    asyncio.create_task(load_models_background())
+    yield
+    # Shutdown (no cleanup needed for our globals)
+
+
 # Initialize FastAPI app
-# Tip: You can customize the title, version, docs URL, etc. here
 app = FastAPI(
     title="Chaplin-UI",
     version="1.0.0",
     description="Visual Speech Recognition Web Application",
+    lifespan=lifespan,
 )
 
 # CORS middleware - allows browser to make requests from any origin
@@ -98,48 +148,6 @@ DEVICE = DEFAULT_DEVICE  # "cpu" or "cuda:0"
 WEB_DIR = Path(__file__).parent / WEB_DIR_NAME  # Frontend files location
 
 
-@app.on_event("startup")
-async def load_model() -> None:
-    """Load VSR model and initialize LLM client on application startup.
-    
-    This runs once when the server starts. The model loading can take
-    a minute or two, so be patient! The server will still respond to
-    requests, but will return 503 until the model is loaded.
-    
-    Tip: Check /api/health to see if models are ready.
-    """
-    global vsr_model, llm_client
-    
-    setup_logging()
-    
-    # Load VSR (Visual Speech Recognition) model
-    # This is the "brain" that reads lips and converts to text
-    try:
-        logger.info(f"Loading VSR model from {CONFIG_PATH}")
-        logger.info("This may take a minute - the model is large (~500MB)")
-        vsr_model = InferencePipeline(
-            config_filename=CONFIG_PATH,
-            detector=DETECTOR,  # Face detection method
-            face_track=True,  # Track face across frames for better accuracy
-            device=DEVICE,  # CPU or GPU
-        )
-        logger.info("✅ VSR model loaded successfully!")
-    except Exception as e:
-        logger.error(f"❌ Failed to load VSR model: {e}")
-        logger.error("Make sure you ran ./setup.sh to download model files")
-        vsr_model = None
-    
-    # Initialize LLM client for text correction
-    # This connects to LM Studio (or any OpenAI-compatible API)
-    # The LLM fixes grammar and formatting from the raw VSR output
-    llm_client = create_llm_client(
-        base_url=LLM_DEFAULT_BASE_URL,  # Usually http://localhost:1234/v1
-        model=LLM_DEFAULT_MODEL,  # "local" for LM Studio
-    )
-    logger.info("✅ LLM client initialized")
-    logger.info("💡 Make sure LM Studio is running with a model loaded!")
-
-
 @app.get("/", response_class=HTMLResponse)
 async def serve_index() -> HTMLResponse:
     """Serve the main HTML page."""
@@ -159,8 +167,15 @@ async def serve_js() -> FileResponse:
 
 
 @app.post("/api/process-video")
-async def process_video(video: UploadFile = File(...)) -> dict:
+async def process_video(
+    video: UploadFile = File(...),
+    provider: Optional[str] = Form(None),
+    model: Optional[str] = Form(None),
+) -> dict:
     """Process uploaded video file for VSR transcription.
+    
+    Supports optional provider (ollama/lmstudio) and model selection.
+    If not provided, uses LM Studio defaults.
     
     This is the main endpoint that handles video processing:
     1. Validates the video format
@@ -172,6 +187,8 @@ async def process_video(video: UploadFile = File(...)) -> dict:
     
     Args:
         video: Uploaded video file from the browser.
+        provider: Optional LLM provider - "ollama" or "lmstudio" (default: lmstudio).
+        model: Optional model name override (e.g. "mistral" for Ollama, "local" for LM Studio).
         
     Returns:
         Dictionary with:
@@ -197,11 +214,11 @@ async def process_video(video: UploadFile = File(...)) -> dict:
         console.log(data.corrected);  // "Hello world."
         ```
     """
-    # Check if models are ready
+    # Check if models are ready (they load in background after server starts)
     if vsr_model is None:
         raise HTTPException(
             status_code=503,
-            detail="Model not loaded yet. Please wait for startup to complete. Check /api/health for status."
+            detail="Model still loading... Please wait a moment and try again.",
         )
     
     if llm_client is None:
@@ -259,7 +276,12 @@ async def process_video(video: UploadFile = File(...)) -> dict:
             # Step 2: LLM correction
             # The raw output is usually ALL CAPS with no punctuation
             # The LLM fixes grammar, adds punctuation, and formats it nicely
-            corrected = await llm_client.correct_text_simple(output)
+            # Use per-request provider/model if provided, else default client
+            if provider and provider in (LLM_PROVIDER_OLLAMA, LLM_PROVIDER_LMSTUDIO):
+                request_client = create_llm_client(provider=provider, model=model)
+                corrected = await request_client.correct_text_simple(output)
+            else:
+                corrected = await llm_client.correct_text_simple(output)
             # Privacy: Use debug level for transcription text to avoid logging sensitive data
             logger.debug(f"✨ Corrected output: {corrected}")
             
@@ -288,6 +310,21 @@ async def health() -> dict:
         "status": "ok",
         "model_loaded": vsr_model is not None,
         "llm_client_ready": llm_client is not None,
+    }
+
+
+@app.get("/api/llm-config")
+async def get_llm_config() -> dict:
+    """Get available LLM providers and their default models.
+    
+    Returns:
+        Dictionary with provider options for the UI.
+    """
+    return {
+        "providers": [
+            {"id": LLM_PROVIDER_OLLAMA, "name": "Ollama", "default_model": OLLAMA_DEFAULT_MODEL},
+            {"id": LLM_PROVIDER_LMSTUDIO, "name": "LM Studio", "default_model": LMSTUDIO_DEFAULT_MODEL},
+        ],
     }
 
 

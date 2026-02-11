@@ -1,0 +1,15 @@
+# Ollama LLM configuration
+# Use with: python main.py --config-name ollama
+# Or: python main.py llm_provider=ollama llm_base_url=http://localhost:11434/v1 llm_model=llama3.2
+#
+# Prerequisites:
+#   - Install Ollama: https://ollama.com
+#   - Run: ollama serve (usually starts automatically)
+#   - Pull a model: ollama pull llama3.2 (or mistral, llama2, etc.)
+
+defaults:
+  - default
+
+llm_provider: ollama
+llm_base_url: http://localhost:11434/v1
+llm_model: llama3.2

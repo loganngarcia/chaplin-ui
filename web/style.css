@@ -42,6 +42,93 @@
   box-sizing: border-box;
 }
 
+/* Settings icon - top left */
+.settings-btn {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 100;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tertiary-system-background);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--secondary-label);
+  transition: color 0.15s ease, background 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-btn:hover {
+  color: var(--label);
+  background: var(--secondary-system-background);
+}
+
+.settings-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* Settings panel - overlay with backdrop */
+.settings-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 72px 16px 16px 16px;  /* Top padding for icon clearance */
+  pointer-events: none;
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+.settings-panel:not([hidden]) {
+  pointer-events: auto;
+}
+
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 199;
+  cursor: pointer;
+}
+
+.settings-panel-content {
+  position: relative;
+  z-index: 201;
+  background: var(--secondary-system-background);
+  border-radius: var(--radius);
+  padding: 20px;
+  min-width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+.settings-title {
+  margin: 0 0 16px 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--label);
+}
+
+.settings-panel .provider-row {
+  margin-bottom: 8px;
+}
+
+.settings-panel .btn {
+  margin-top: 16px;
+  width: 100%;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
@@ -194,6 +281,45 @@ body {
 .copy-btn {
   align-self: stretch;
   height: 44px;
+}
+
+.provider-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.input-select,
+.input-text {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  background: var(--tertiary-system-background);
+  color: var(--label);
+  border: none;
+  outline: none;
+  font-size: var(--font-size);
+  font-family: inherit;
+}
+
+.input-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23FFFFFF' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.input-text::placeholder {
+  color: var(--tertiary-label);
+}
+
+.setting-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--tertiary-label);
+  line-height: 1.4;
 }
 
 .right-panel h2 {

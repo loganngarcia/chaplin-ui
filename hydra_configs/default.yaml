@@ -1,12 +1,12 @@
 # config.yaml
 
-defaults:  
-  - _self_  
-  - override hydra/hydra_logging: disabled  
-  - override hydra/job_logging: disabled  
-hydra:  
-  output_subdir: null  
-  run:  
+defaults:
+  - _self_
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+hydra:
+  output_subdir: null
+  run:
     dir: .
 config_filename: null
 data_dir: null
@@ -17,9 +17,14 @@ landmarks_filename: null
 landmarks_ext: ".pkl"
 labels_filename: null
 detector: retinaface
-# LM Studio config (OpenAI-compatible API)
+
+# LLM config - choose provider: "ollama" or "lmstudio"
+# Ollama: run `ollama serve`, then `ollama pull <model>` (e.g. llama3.2, mistral)
+# LM Studio: load model, enable Local Server (port 1234)
+llm_provider: lmstudio
 llm_base_url: http://localhost:1234/v1
-llm_model: local  # Use your loaded model's name from LM Studio (e.g. "qwen2.5-3b" or "local")
+llm_model: local
+
 dst_filename: null
 gpu_idx: 0
 output_subdir: null

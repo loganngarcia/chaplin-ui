@@ -1,8 +1,11 @@
 """
 LLM client wrapper for Chaplin-UI.
 
-This module provides a unified interface for interacting with LLM services
-(LM Studio, OpenAI-compatible APIs) for text correction and formatting.
+This module provides a unified interface for interacting with LLM services:
+- Ollama (https://ollama.com) - local LLMs via `ollama serve`
+- LM Studio (https://lmstudio.ai) - local LLMs via Local Server
+
+Both use OpenAI-compatible APIs for text correction and formatting.
 """
 
 import logging
@@ -15,8 +18,15 @@ from chaplin_ui.core.constants import (
     LLM_DEFAULT_MODEL,
     LLM_FALLBACK_MODEL,
     LLM_API_KEY,
+    LLM_API_KEY_OLLAMA,
     LLM_TEMPERATURE,
     CHAPLIN_OUTPUT_SCHEMA,
+    LLM_PROVIDER_OLLAMA,
+    LLM_PROVIDER_LMSTUDIO,
+    OLLAMA_BASE_URL,
+    OLLAMA_DEFAULT_MODEL,
+    LMSTUDIO_BASE_URL,
+    LMSTUDIO_DEFAULT_MODEL,
 )
 from chaplin_ui.core.text_formatter import format_text_locally
 
@@ -184,19 +194,55 @@ class LLMClient:
         return corrected
 
 
+def _get_provider_defaults(provider: str) -> tuple[str, str, str]:
+    """Get base_url, model, and api_key for a given provider.
+    
+    Args:
+        provider: One of "ollama" or "lmstudio".
+        
+    Returns:
+        Tuple of (base_url, model, api_key).
+    """
+    if provider == LLM_PROVIDER_OLLAMA:
+        return (OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL, LLM_API_KEY_OLLAMA)
+    if provider == LLM_PROVIDER_LMSTUDIO:
+        return (LMSTUDIO_BASE_URL, LMSTUDIO_DEFAULT_MODEL, LLM_API_KEY)
+    return (LLM_DEFAULT_BASE_URL, LLM_DEFAULT_MODEL, LLM_API_KEY)
+
+
 def create_llm_client(
     base_url: Optional[str] = None,
     model: Optional[str] = None,
+    provider: Optional[str] = None,
 ) -> LLMClient:
     """Factory function to create an LLM client with defaults.
     
     Args:
-        base_url: Optional base URL override.
-        model: Optional model name override.
+        base_url: Optional base URL override. If provider is set, this overrides
+            the provider's default URL.
+        model: Optional model name override. If provider is set, this overrides
+            the provider's default model.
+        provider: Optional provider name ("ollama" or "lmstudio"). When set,
+            uses that provider's default base_url and model unless overridden.
         
     Returns:
         Configured LLMClient instance.
+        
+    Example:
+        >>> # Use LM Studio (default)
+        >>> client = create_llm_client()
+        >>> # Use Ollama with default model
+        >>> client = create_llm_client(provider="ollama")
+        >>> # Use Ollama with specific model
+        >>> client = create_llm_client(provider="ollama", model="mistral")
     """
+    if provider:
+        def_url, def_model, api_key = _get_provider_defaults(provider)
+        return LLMClient(
+            base_url=base_url or def_url,
+            model=model or def_model,
+            api_key=api_key,
+        )
     return LLMClient(
         base_url=base_url or LLM_DEFAULT_BASE_URL,
         model=model or LLM_DEFAULT_MODEL,

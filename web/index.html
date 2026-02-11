@@ -21,6 +21,33 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <!-- Settings icon - top left corner -->
+  <button id="settings-btn" class="settings-btn" aria-label="Settings">
+    <svg class="settings-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
+  <!-- Settings panel (hidden by default) -->
+  <div id="settings-panel" class="settings-panel" hidden>
+    <div class="settings-panel-content">
+      <h3 class="settings-title">Settings</h3>
+      <div class="section">
+        <label>LLM Provider</label>
+        <div class="provider-row">
+          <select id="provider-select" class="input-select" aria-label="Choose LLM provider">
+            <option value="lmstudio">LM Studio</option>
+            <option value="ollama">Ollama</option>
+          </select>
+          <input type="text" id="model-input" class="input-text" placeholder="Model (optional)"
+            aria-label="Model name override (optional)">
+        </div>
+        <p class="setting-hint" id="provider-hint">LM Studio: load model, enable Local Server (port 1234)</p>
+      </div>
+      <button id="settings-close" class="btn btn-secondary">Done</button>
+    </div>
+    <div id="settings-backdrop" class="settings-backdrop"></div>
+  </div>
   <!-- Main application container - uses CSS Grid for layout -->
   <div class="app">
     <!-- Left Panel: Video and Controls -->

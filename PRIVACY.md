@@ -52,7 +52,9 @@ Chaplin-UI is designed with privacy in mind. Here's what you need to know:
 
 ### LLM Processing
 
-- By default, text is sent to **LM Studio** running on `localhost:1234`
+- By default, text is sent to **Ollama** or **LM Studio** running locally
+  - Ollama: `localhost:11434`
+  - LM Studio: `localhost:1234`
 - This is **local** - no data leaves your machine
 - If you configure external LLM APIs (OpenAI, etc.), text will be sent to those services
 - Always review LLM API privacy policies if using external services

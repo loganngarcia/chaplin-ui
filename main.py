@@ -86,14 +86,16 @@ def main():
         config_path=cfg.config_filename,
         detector=cfg.detector,
         device=device,
-        llm_base_url=cfg.llm_base_url,
-        llm_model=cfg.llm_model,
+        llm_base_url=getattr(cfg, "llm_base_url", None),
+        llm_model=getattr(cfg, "llm_model", None),
+        llm_provider=getattr(cfg, "llm_provider", None),
     )
     
     # Initialize Chaplin CLI application
     chaplin = Chaplin(
-        llm_base_url=cfg.llm_base_url,
-        llm_model=cfg.llm_model,
+        llm_base_url=getattr(cfg, "llm_base_url", None),
+        llm_model=getattr(cfg, "llm_model", None),
+        llm_provider=getattr(cfg, "llm_provider", None),
         config=app_config,
     )
     

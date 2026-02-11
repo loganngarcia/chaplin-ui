@@ -82,6 +82,7 @@ class Chaplin:
         self,
         llm_base_url: Optional[str] = None,
         llm_model: Optional[str] = None,
+        llm_provider: Optional[str] = None,
         config: Optional[AppConfig] = None,
     ):
         """Initialize Chaplin CLI application.
@@ -89,21 +90,33 @@ class Chaplin:
         Args:
             llm_base_url: Optional LLM API base URL override.
             llm_model: Optional LLM model name override.
+            llm_provider: Optional LLM provider ("ollama" or "lmstudio").
             config: Optional application configuration.
         """
         setup_logging()
         
         self.config = config or AppConfig()
         self.vsr_model = None  # Set externally after initialization
-        
-        # Initialize LLM client
+
+        # Apply llm_provider override to config
         llm_config = self.config.llm
+        if llm_provider:
+            llm_config = llm_config.__class__(
+                base_url=llm_config.base_url, model=llm_config.model, provider=llm_provider
+            )
+
+        # Initialize LLM client (supports Ollama and LM Studio)
         if llm_base_url:
-            llm_config = llm_config.__class__(base_url=llm_base_url, model=llm_config.model)
+            llm_config = llm_config.__class__(
+                base_url=llm_base_url, model=llm_config.model, provider=llm_config.provider
+            )
         if llm_model:
-            llm_config = llm_config.__class__(base_url=llm_config.base_url, model=llm_model)
-        
+            llm_config = llm_config.__class__(
+                base_url=llm_config.base_url, model=llm_model, provider=llm_config.provider
+            )
+
         self.llm_client = create_llm_client(
+            provider=llm_config.provider,
             base_url=llm_config.base_url,
             model=llm_config.model,
         )

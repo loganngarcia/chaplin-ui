@@ -22,12 +22,29 @@ from typing import List
 # ============================================================================
 # LLM Configuration
 # ============================================================================
-# These control how we connect to LM Studio (or any OpenAI-compatible API)
+# Chaplin-UI supports Ollama and LM Studio for local LLM text correction.
+# Both use OpenAI-compatible APIs - pick the provider that matches your setup.
 
-LLM_DEFAULT_BASE_URL: str = "http://localhost:1234/v1"  # LM Studio default port
-LLM_DEFAULT_MODEL: str = "local"  # "local" means "use whatever model is loaded"
+# Provider types - users can choose "ollama" or "lmstudio"
+LLM_PROVIDER_OLLAMA: str = "ollama"
+LLM_PROVIDER_LMSTUDIO: str = "lmstudio"
+LLM_PROVIDERS: List[str] = [LLM_PROVIDER_OLLAMA, LLM_PROVIDER_LMSTUDIO]
+LLM_DEFAULT_PROVIDER: str = LLM_PROVIDER_LMSTUDIO  # Default for backward compatibility
+
+# Ollama defaults (https://ollama.com - run `ollama serve` then load a model)
+OLLAMA_BASE_URL: str = "http://localhost:11434/v1"
+OLLAMA_DEFAULT_MODEL: str = "llama3.2"  # Common default; use `ollama list` to see yours
+
+# LM Studio defaults (https://lmstudio.ai - load model, enable Local Server)
+LMSTUDIO_BASE_URL: str = "http://localhost:1234/v1"
+LMSTUDIO_DEFAULT_MODEL: str = "local"  # "local" = use whatever model is loaded
+
+# Legacy constants (mapped to LM Studio for backward compatibility)
+LLM_DEFAULT_BASE_URL: str = LMSTUDIO_BASE_URL
+LLM_DEFAULT_MODEL: str = LMSTUDIO_DEFAULT_MODEL
 LLM_FALLBACK_MODEL: str = "zai-org/glm-4.6v-flash"  # Fallback if "local" fails
 LLM_API_KEY: str = "lm-studio"  # LM Studio doesn't require a real key
+LLM_API_KEY_OLLAMA: str = "ollama"  # Ollama ignores key but OpenAI client requires one
 LLM_TEMPERATURE: float = 0.3  # Lower = more consistent, Higher = more creative
 
 # JSON schema for LM Studio structured output

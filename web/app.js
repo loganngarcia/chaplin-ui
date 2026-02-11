@@ -28,6 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const correctedOutput = document.getElementById('corrected-output');
   const copyBtn = document.getElementById('copy-btn');
   const statusEl = document.getElementById('status');
+  const providerSelect = document.getElementById('provider-select');
+  const modelInput = document.getElementById('model-input');
+  const providerHint = document.getElementById('provider-hint');
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsPanel = document.getElementById('settings-panel');
+  const settingsClose = document.getElementById('settings-close');
+  const settingsBackdrop = document.getElementById('settings-backdrop');
 
   // ========================================================================
   // Application State
@@ -36,6 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let mediaRecorder = null;  // MediaRecorder for capturing video
   let recordedChunks = [];  // Array of video chunks from recording
   let isRecording = false;  // Whether we're currently recording
+  let modelReady = false;  // Whether backend model is loaded (loads in background)
 
   // ========================================================================
   // Utility Functions
@@ -47,8 +55,21 @@ document.addEventListener('DOMContentLoaded', () => {
    * @param {string} type - Status type: 'ready', 'processing', 'error', 'warning'
    */
   function setStatus(text, type = '') {
-    statusEl.textContent = text;
-    statusEl.className = 'status ' + type;
+    if (statusEl) {
+      statusEl.textContent = text;
+      statusEl.className = 'status ' + type;
+    }
+  }
+
+  function setModelReady(ready) {
+    modelReady = ready;
+    uploadBtn.disabled = !ready;
+    recordBtn.disabled = !ready;
+    if (ready) {
+      setStatus('Ready', 'ready');
+    } else {
+      setStatus('Loading model... (30–60 sec first time)', 'processing');
+    }
   }
 
   /**
@@ -81,6 +102,65 @@ document.addEventListener('DOMContentLoaded', () => {
       stream.getTracks().forEach(t => t.stop());
       stream = null;
     }
+  }
+
+  // ========================================================================
+  // LLM Provider Settings
+  // ========================================================================
+  const PROVIDER_HINTS = {
+    lmstudio: 'LM Studio: load model, enable Local Server (port 1234)',
+    ollama: 'Ollama: run `ollama serve`, then `ollama pull <model>`',
+  };
+
+  function updateProviderHint() {
+    const provider = providerSelect?.value || 'lmstudio';
+    if (providerHint) providerHint.textContent = PROVIDER_HINTS[provider] || '';
+  }
+
+  providerSelect?.addEventListener('change', updateProviderHint);
+
+  // Settings panel open/close
+  function openSettings() {
+    settingsPanel?.removeAttribute('hidden');
+  }
+
+  function closeSettings() {
+    settingsPanel?.setAttribute('hidden', '');
+  }
+
+  settingsBtn?.addEventListener('click', openSettings);
+  settingsClose?.addEventListener('click', closeSettings);
+  settingsBackdrop?.addEventListener('click', closeSettings);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && settingsPanel && !settingsPanel.hasAttribute('hidden')) {
+      closeSettings();
+    }
+  });
+
+  // ========================================================================
+  // Model Readiness Polling
+  // ========================================================================
+  // Server starts immediately; model loads in background (~30–60 sec).
+  // Poll /api/health until ready so users see the UI right away.
+  async function pollUntilReady() {
+    setModelReady(false);
+    const maxAttempts = 120;  // 2 min at 1/sec
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        if (data.model_loaded && data.llm_client_ready) {
+          setModelReady(true);
+          return;
+        }
+      } catch (_) {
+        // Server might not be up yet
+      }
+      await new Promise(r => setTimeout(r, 1000));
+    }
+    setStatus('Model loading is taking longer than expected. Check server logs.', 'warning');
+    setModelReady(false);
   }
 
   // ========================================================================
@@ -195,9 +275,13 @@ document.addEventListener('DOMContentLoaded', () => {
     correctedOutput.value = '';
 
     // Create form data for file upload
-    // FastAPI expects multipart/form-data with a 'video' field
+    // FastAPI expects multipart/form-data with 'video' and optional provider/model
     const formData = new FormData();
     formData.append('video', file);
+    const provider = providerSelect?.value || 'lmstudio';
+    const model = modelInput?.value?.trim() || null;
+    if (provider) formData.append('provider', provider);
+    if (model) formData.append('model', model);
 
     try {
       // Send video to backend for processing
@@ -214,7 +298,8 @@ document.addEventListener('DOMContentLoaded', () => {
       // Check if request was successful
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || res.statusText || 'Request failed');
+        const msg = typeof err.detail === 'string' ? err.detail : (err.detail?.msg || err.detail || res.statusText || 'Request failed');
+        throw new Error(msg);
       }
 
       // Parse response and update UI
@@ -254,8 +339,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize Application
   // ========================================================================
   
+  // Set initial provider hint
+  updateProviderHint();
+
   // Start camera when page loads
   startCamera();
+
+  // Poll until model is ready (server loads it in background)
+  pollUntilReady();
 
   // Clean up camera stream when page unloads
   // This prevents camera from staying on after user leaves

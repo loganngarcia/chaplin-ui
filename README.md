@@ -9,7 +9,7 @@
 
 *A beautiful, open-source tool that reads your lips in real-time and transcribes silently mouthed speech using local ML models.*
 
-[Quick Start](#-quick-start) • [Contributing](./CONTRIBUTING.md) • [Privacy](./PRIVACY.md) • [Security](./SECURITY.md) • [Documentation](#-documentation) • [License](./LICENSE.md)
+[Quick Start](#-quick-start) • [Contributing](./CONTRIBUTING.md) • [Privacy](./PRIVACY.md) • [Security](./SECURITY.md) • [Documentation](#-documentation) • [License](./LICENSE)
 
 </div>
 
@@ -29,7 +29,9 @@ Chaplin-UI is a visual speech recognition (VSR) application that can transcribe 
 ### Prerequisites
 
 - **Python 3.12+** (check with `python3 --version`)
-- **LM Studio** ([download here](https://lmstudio.ai/)) - For LLM text correction
+- **LLM local server** – choose one:
+  - **[Ollama](https://ollama.com)** – `ollama serve` + `ollama pull <model>`
+  - **[LM Studio](https://lmstudio.ai/)** – load model, enable Local Server (port 1234)
 - **Modern web browser** with camera access
 
 ### Installation
@@ -53,7 +55,15 @@ Chaplin-UI is a visual speech recognition (VSR) application that can transcribe 
    ```
    This downloads the VSR model from Hugging Face (~500MB).
 
-4. **Start LM Studio:**
+4. **Start your LLM server** (pick one):
+
+   **Option A – Ollama**
+   ```bash
+   ollama serve        # usually starts automatically
+   ollama pull llama3.2   # or mistral, llama2, etc.
+   ```
+
+   **Option B – LM Studio**
    - Open LM Studio
    - Load a model (we recommend `zai-org/glm-4.6v-flash`)
    - Go to **Developer** tab → Enable **Local Server** (port 1234)
@@ -62,7 +72,9 @@ Chaplin-UI is a visual speech recognition (VSR) application that can transcribe 
    ```bash
    ./run_web.sh
    ```
-   Then open [http://localhost:8000](http://localhost:8000) in your browser!
+   The UI opens in **~1 second** at [http://localhost:8000](http://localhost:8000). The model loads in the background (~30–60 sec first time); you can use the interface right away—buttons enable when ready.
+
+   Use the **LLM Provider** dropdown in the web UI to choose Ollama or LM Studio before processing.
 
 ## 📖 Documentation
 
@@ -92,8 +104,20 @@ chaplin-ui/
 1. **Video Capture**: Camera records video frames (or upload existing video)
 2. **Face Detection**: MediaPipe detects and tracks your face
 3. **VSR Inference**: LRS3 model processes lip movements → raw text (ALL CAPS)
-4. **LLM Correction**: LM Studio corrects grammar, adds punctuation, formats text
+4. **LLM Correction**: Ollama or LM Studio corrects grammar, adds punctuation, formats text
 5. **Display**: Shows both raw and corrected transcription
+
+### LLM Providers: Ollama vs LM Studio
+
+Chaplin-UI supports two local LLM backends. Both use OpenAI-compatible APIs:
+
+| Provider   | Default URL              | Default Model | Setup |
+|-----------|---------------------------|---------------|-------|
+| **Ollama** | `http://localhost:11434/v1` | `llama3.2`    | `ollama serve` then `ollama pull <model>` |
+| **LM Studio** | `http://localhost:1234/v1` | `local`       | Load model, enable Local Server in Developer tab |
+
+- **Web app**: Select provider in the "LLM Provider" dropdown and optionally override the model name.
+- **CLI**: Use `llm_provider=ollama` or `llm_provider=lmstudio`, or run with `--config-name ollama` for Ollama defaults.
 
 ### Key Components
 
@@ -116,6 +140,9 @@ python web_app.py
 ```bash
 source .venv/bin/activate
 python main.py config_filename=./configs/LRS3_V_WER19.1.ini detector=mediapipe
+# With Ollama:
+python main.py --config-name ollama
+# Or: python main.py llm_provider=ollama llm_model=mistral
 ```
 
 ### Code Style
@@ -156,7 +183,7 @@ See our [Contributing Guide](./CONTRIBUTING.md) for details on:
 
 ## 📝 License
 
-This project is licensed under the MIT License - see [LICENSE.md](./LICENSE.md) for details.
+This project is licensed under the MIT License - see [LICENSE](./LICENSE) for details.
 
 ## 🙏 Acknowledgments
 
@@ -168,7 +195,7 @@ Chaplin-UI is based on [Chaplin](https://github.com/amanvirparhar/chaplin) by **
 
 - **VSR Model**: Based on [Auto-AVSR](https://github.com/mpc001/auto_avsr) by mpc001
 - **Dataset**: [Lip Reading Sentences 3](https://mmai.io/datasets/lip_reading/)
-- **LLM**: Uses LM Studio for local text correction
+- **LLM**: Uses Ollama or LM Studio for local text correction (both OpenAI-compatible)
 
 ## 💬 Community
 

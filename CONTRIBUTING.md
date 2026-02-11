@@ -218,9 +218,8 @@ python -c "import sys; print(sys.path)"
 - Check config file path in `configs/`
 
 **LLM errors:**
-- Verify LM Studio is running
-- Check port 1234 is accessible
-- Try `curl http://localhost:1234/v1/models`
+- **Ollama**: Verify `ollama serve` is running, try `ollama list` and `curl http://localhost:11434/v1/models`
+- **LM Studio**: Verify Local Server is enabled (port 1234), try `curl http://localhost:1234/v1/models`
 
 ## 📚 Learning Resources
 
@@ -243,8 +242,8 @@ python -c "import sys; print(sys.path)"
 **Q: Do I need to understand ML to contribute?**  
 A: Not at all! There's plenty to do: UI improvements, bug fixes, documentation, testing, etc.
 
-**Q: How do I test without LM Studio?**  
-A: The app will fall back to local text formatting if LLM is unavailable.
+**Q: How do I test without Ollama or LM Studio?**  
+A: The app will fall back to local text formatting if the LLM is unavailable. Pick your provider in the web UI (Ollama or LM Studio) before processing.
 
 **Q: Can I work on multiple features at once?**  
 A: It's better to focus on one feature per PR for easier review.

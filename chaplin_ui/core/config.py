@@ -18,6 +18,13 @@ from chaplin_ui.core.constants import (
     DEFAULT_RES_FACTOR,
     LLM_DEFAULT_BASE_URL,
     LLM_DEFAULT_MODEL,
+    LLM_DEFAULT_PROVIDER,
+    LLM_PROVIDER_OLLAMA,
+    LLM_PROVIDER_LMSTUDIO,
+    OLLAMA_BASE_URL,
+    OLLAMA_DEFAULT_MODEL,
+    LMSTUDIO_BASE_URL,
+    LMSTUDIO_DEFAULT_MODEL,
 )
 
 
@@ -74,13 +81,18 @@ class VSRConfig:
 class LLMConfig:
     """Configuration for LLM text correction service.
     
+    Supports Ollama and LM Studio providers. Both use OpenAI-compatible APIs.
+    
     Attributes:
         base_url: Base URL for LLM API endpoint.
         model: Model name to use.
+        provider: Provider name ("ollama" or "lmstudio"). When set, base_url
+            and model default to that provider's values.
     """
     
     base_url: str = LLM_DEFAULT_BASE_URL
     model: str = LLM_DEFAULT_MODEL
+    provider: Optional[str] = LLM_DEFAULT_PROVIDER
 
 
 @dataclass(frozen=True)
@@ -107,6 +119,7 @@ class AppConfig:
         device: Optional[str] = None,
         llm_base_url: Optional[str] = None,
         llm_model: Optional[str] = None,
+        llm_provider: Optional[str] = None,
     ) -> "AppConfig":
         """Create configuration from command-line arguments.
         
@@ -116,6 +129,7 @@ class AppConfig:
             device: Optional device name.
             llm_base_url: Optional LLM base URL.
             llm_model: Optional LLM model name.
+            llm_provider: Optional LLM provider ("ollama" or "lmstudio").
             
         Returns:
             AppConfig instance with overridden values.
@@ -125,10 +139,25 @@ class AppConfig:
             detector=detector or DEFAULT_DETECTOR,
             device=device or DEFAULT_DEVICE,
         )
-        
+
+        # Resolve LLM config: use provider-specific defaults when provider is set
+        provider = llm_provider or LLM_DEFAULT_PROVIDER
+        if provider == LLM_PROVIDER_OLLAMA:
+            def_url, def_model = OLLAMA_BASE_URL, OLLAMA_DEFAULT_MODEL
+        elif provider == LLM_PROVIDER_LMSTUDIO:
+            def_url, def_model = LMSTUDIO_BASE_URL, LMSTUDIO_DEFAULT_MODEL
+        else:
+            def_url, def_model = LLM_DEFAULT_BASE_URL, LLM_DEFAULT_MODEL
+
+        # Use provider defaults; allow override only for custom URLs (e.g. different port)
+        custom_urls = (OLLAMA_BASE_URL, LMSTUDIO_BASE_URL)
+        base_url = llm_base_url if (llm_base_url and llm_base_url not in custom_urls) else def_url
+        model = llm_model or def_model
+
         llm_config = LLMConfig(
-            base_url=llm_base_url or LLM_DEFAULT_BASE_URL,
-            model=llm_model or LLM_DEFAULT_MODEL,
+            base_url=base_url,
+            model=model,
+            provider=provider,
         )
-        
+
         return cls(vsr=vsr_config, llm=llm_config)
